@@ -47,3 +47,8 @@ bind_rows(pre2018, pre2019) %>%
   mutate(month = month.name[month])
 ```
 
+```{r}
+sum(pull(pre2018, total))
+median(pull(pre2019, total))
+```
+
