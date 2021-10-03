@@ -27,7 +27,8 @@ pre2019 = readxl::read_excel(
 ) %>% 
   janitor::clean_names() %>% 
   drop_na(total) %>% 
-  mutate(year = 2019)
+  mutate(year = 2019) %>% 
+  relocate(year)
 
 pre2018 = readxl::read_excel(
   "./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",
@@ -36,6 +37,13 @@ pre2018 = readxl::read_excel(
 ) %>% 
   janitor::clean_names() %>% 
   drop_na(total) %>% 
-  mutate(year = 2018)
+  mutate(year = 2018) %>% 
+  relocate(year)
+```
+
+```{r}
+##month.name is a vector, not function
+bind_rows(pre2018, pre2019) %>% 
+  mutate(month = month.name[month])
 ```
 
