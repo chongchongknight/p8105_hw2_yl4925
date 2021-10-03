@@ -5,6 +5,7 @@ date: "10/3/2021"
 output: github_document
 ---
 
+## Problem 1
 ```{r}
 library(tidyverse)
 ```
@@ -50,5 +51,19 @@ bind_rows(pre2018, pre2019) %>%
 ```{r}
 sum(pull(pre2018, total))
 median(pull(pre2019, total))
+```
+
+## Problem 2
+
+```{r}
+pols_month = read_csv(
+  "./data/fivethirtyeight_datasets/pols-month.csv") %>% 
+  janitor::clean_names() %>% 
+  separate(mon, into = c("year", "month", "day"), sep = "-") %>% 
+  mutate(month = month.name[as.integer(month)]) %>% 
+  pivot_longer(
+    c("prez_gop", "prez_dem"),
+    values_to = "president") %>% 
+  select(-"day")
 ```
 
