@@ -100,3 +100,14 @@ pols_snp = left_join(pols_month, snp)
 pols_snp_unemployment = left_join(pols_snp, unemployment)
 ```
 
+## Problem 3
+```{r}
+pop_baby_name = read_csv("./data/Popular_Baby_Names.csv") %>% 
+  janitor::clean_names()
+```
+
+```{r}
+duplictaed_ones = pop_baby_name[duplicated(pop_baby_name[,1:4]),]
+distinct_pop_name = pop_baby_name[!duplicated(pop_baby_name[,1:4]),]
+```
+
