@@ -56,20 +56,21 @@ median(pull(pre2019, total))
 ## Problem 2
 
 ```{r}
-pols_month = read_csv(
-  "./data/fivethirtyeight_datasets/pols-month.csv") %>% 
+pols_month = read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>% 
   janitor::clean_names() %>% 
   separate(mon, into = c("year", "month", "day"), sep = "-") %>% 
   mutate(month = month.name[as.integer(month)]) %>% 
+  rename(gop = prez_gop, dem = prez_dem) %>% 
   pivot_longer(
-    c("prez_gop", "prez_dem"),
-    values_to = "president") %>% 
-  select(-"day")
+    c("gop", "dem"),
+    names_to = "president",
+    values_to = "logical") %>% 
+  filter(logical != 0) %>% 
+  select(-day, -logical) 
 ```
 
 ```{r}
-snp = read_csv(
-  "./data/fivethirtyeight_datasets/snp.csv") %>% 
+snp = read_csv("./data/fivethirtyeight_datasets/snp.csv") %>% 
   janitor::clean_names() %>% 
   separate(date, into = c("year", "month", "day"), sep = "/") %>% 
   mutate(month = month.name[as.integer(month)]) %>%
@@ -77,4 +78,13 @@ snp = read_csv(
   arrange("year", "month")
 ```
 
+```{r}
+unemployment = read_csv("./data/fivethirtyeight_datasets/unemployment.csv") %>% 
+  pivot_longer(
+    Jan:Dec, 
+    names_to = "month",
+    values_to = "unemployment"
+  ) %>% 
+  mutate(month = month.name[match(month,month.abb)])
+```
 
