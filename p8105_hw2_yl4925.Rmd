@@ -77,9 +77,9 @@ snp_raw = read_csv("./data/fivethirtyeight_datasets/snp.csv") %>%
   select(-"day") %>%
   arrange("year", "month")
 snp_after_2000 = filter(snp_raw, year <= 15) %>% 
-  mutate(year = as.numeric(year) + 2000)
+  mutate(year = as.character(as.numeric(year) + 2000))
 snp_before_2000 = filter(snp_raw, year >= 50) %>% 
-  mutate(year = as.numeric(year) + 1900)
+  mutate(year = as.character(as.numeric(year) + 1900))
 snp = bind_rows(snp_after_2000, snp_before_2000) %>% 
   relocate(year, month) %>% 
   arrange(year, month)
@@ -93,5 +93,9 @@ unemployment = read_csv("./data/fivethirtyeight_datasets/unemployment.csv") %>%
     values_to = "unemployment"
   ) %>% 
   mutate(month = month.name[match(month,month.abb)])
+```
+
+```{r}
+combo = left_join(pols_month, snp)
 ```
 
