@@ -6,10 +6,11 @@ output: github_document
 ---
 
 ## Problem 1
-```{r}
+```{r, include = FALSE}
 library(tidyverse)
 ```
 
+Load trash wheel as required
 ```{r}
 trash_wheel_df = readxl::read_excel(
   "./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx",
@@ -19,9 +20,13 @@ trash_wheel_df = readxl::read_excel(
   drop_na(dumpster) %>% 
   filter(dumpster != "Grand Total") %>% 
   mutate(sports_balls = round(sports_balls))
+trashrow = nrow(trash_wheel_df)
+trashcol = ncol(trash_wheel_df)
 ```
 
-```{r}
+
+Read and clean precipitation data for 2018 and 2019. For each, omit rows without precipitation data and add a variable for year. Next, combine precipitation dataset and convert month to a character variable
+```{r, message = FALSE}
 pre2019 = readxl::read_excel(
   "./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx",
   sheet = "2019 Precipitation",
@@ -41,70 +46,106 @@ pre2018 = readxl::read_excel(
   drop_na(total) %>% 
   mutate(year = 2018) %>% 
   relocate(year)
+pre2019row = nrow(pre2019)
+pre2019col = ncol(pre2019)
+pre2018row = nrow(pre2018)
+pre2018col = ncol(pre2018)
 ```
 
-```{r}
+```{r, message = FALSE}
 ##month.name is a vector, not function
 bind_rows(pre2018, pre2019) %>% 
   mutate(month = month.name[month])
 ```
 
 ```{r}
-sum(pull(pre2018, total))
+sum_2018 = sum(pull(pre2018, total))
 ball_2019 = filter(trash_wheel_df, year == 2019)
-median(pull(ball_2019, sports_balls))
+median_2019 = median(pull(ball_2019, sports_balls))
 ```
 
+
+```{r, include = FALSE}
+wtmin = min(pull(trash_wheel_df, weight_tons))
+wtmax = max(pull(trash_wheel_df, weight_tons))
+wtmean = mean(pull(trash_wheel_df, weight_tons))
+vcymin = min(pull(trash_wheel_df, var = 6))
+vcymax = max(pull(trash_wheel_df, var = 6))
+vcymean = mean(pull(trash_wheel_df, var = 6))
+pbmin = min(pull(trash_wheel_df, var = 7))
+pbmax = max(pull(trash_wheel_df, var = 7))
+pbmean = mean(pull(trash_wheel_df, var = 7))
+pmin = min(pull(trash_wheel_df, var = 8))
+pmax = max(pull(trash_wheel_df, var = 8))
+pmean = mean(pull(trash_wheel_df, var = 8))
+```
+
+Trash Wheel size is (`r trashrow`, `r trashcol`). When we load Trash Wheel data, we find that it includes dumpster labels, date variable(month, year, date) and totally 10 different categories of trash(Weight_tons, volume_cubic_yards, plastic_bottles, polystyrene, cigarette_butts, glass_bottles, grocery_bags, chip_bags, sports_bags, homes_powered). Weight_tons ranges from `r wtmin` to `r wtmax` with mean `r wtmean`, volume_cubic_yards ranges from `r vcymin` to `r vcymax` with mean `r vcymean`, plastic_bottles ranges from `r pbmin` to `r pbmax` with mean `r pbmean`, polystyrene ranges from `r pmin` to `r pmax` with mean `r pmean`. (other types of trash are omitted)
+
+The size for 2018 precipitation and 2019 precipitation both are (`r pre2018row`, `r pre2018col`).
+The total precipitation in 2018 is `r sum_2018`, the median number of sports balls in a dumpster in 2019 is `r median_2019`.
 
 ## Problem 2
 
-```{r}
+Load pols_month as required, add president variable to show party of president. 
+```{r, message = FALSE}
 pols_month = read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>% 
   janitor::clean_names() %>% 
   separate(mon, into = c("year", "month", "day"), sep = "-") %>% 
-  mutate(month = month.name[as.integer(month)]) %>% 
-  rename(gop = prez_gop, dem = prez_dem) %>% 
-  pivot_longer(
-    c("gop", "dem"),
-    names_to = "president",
-    values_to = "logical") %>% 
-  filter(logical != 0) %>% 
-  select(-day, -logical) 
+  mutate(month = month.name[as.integer(month)],
+         president = if_else(prez_gop == 1, "republic", "democratic")) %>% 
+  select(-day, -prez_gop, -prez_dem)
 ```
 
-```{r}
+Load snp data and rearrange data through 2-digit year
+```{r, message = FALSE}
 snp_raw = read_csv("./data/fivethirtyeight_datasets/snp.csv") %>% 
   janitor::clean_names() %>% 
   separate(date, into = c("month", "day", "year"), sep = "/") %>% 
-  mutate(month = month.name[as.integer(month)]) %>%
-  select(-"day") %>%
-  arrange("year", "month")
-snp_after_2000 = filter(snp_raw, year <= 15) %>% 
-  mutate(year = as.character(as.numeric(year) + 2000))
-snp_before_2000 = filter(snp_raw, year >= 50) %>% 
-  mutate(year = as.character(as.numeric(year) + 1900))
-snp = bind_rows(snp_after_2000, snp_before_2000) %>% 
   relocate(year, month) %>% 
-  arrange(year, month)
+  mutate(month = as.integer(month)) %>% 
+  arrange(year, month) %>% 
+  mutate(month = month.name[month]) %>%
+  select(-"day")
+
+snp_after_2000 = filter(snp_raw, year <= 20) %>% 
+  mutate(year = as.character(as.numeric(year) + 2000))
+snp_before_2000 = filter(snp_raw, year >= 20) %>% 
+  mutate(year = as.character(as.numeric(year) + 1900))
+snp = bind_rows(snp_before_2000, snp_after_2000) 
 ```
 
-```{r}
+Load unemployment data and switch it to longer version.
+```{r, message = FALSE}
 unemployment = read_csv("./data/fivethirtyeight_datasets/unemployment.csv") %>% 
   pivot_longer(
     Jan:Dec, 
     names_to = "month",
     values_to = "unemployment"
   ) %>% 
-  mutate(month = month.name[match(month,month.abb)])
+  mutate(month = month.name[match(month,month.abb)]) %>% 
+  rename(year = Year) %>% 
+  mutate(year = as.character(year))
 ```
 
-```{r}
+Join the datasets by merging snp into pols, and merging unemployment into the result.
+```{r, message = FALSE}
 pols_snp = left_join(pols_month, snp) 
 pols_snp_unemployment = left_join(pols_snp, unemployment)
 ```
 
+pols_month is dataframe for number of national politicians, size is (`r dim(pols_month)`). It contains number of democratic governors, senators, representatives and presidents, number of republic governors, senators, representatives and presidents. And it contains date from Jan 1947 - June 2015.(variables contain year, month, gov_gop, sen_gop, rep_gop, gov_dem, sen_dem, rep_dem)
+
+
+snp is dataframe for Standard & Poor’s stock market index, size is (`r dim(snp)`). It contains the close index for S&P and date from Jan 1950 to July 2015.(variables contain year, month, close)
+
+unemployment is dataframe for unemployment, size is (`r dim(unemployment)`). It contains the percentage of unemployment and date from Jan 1948 to June 2015.(variables contain year, month, unemployment)
+
+pols_snp_unemployment join these three datasets, so it includes all variables above. Its dimension is (`r dim(pols_snp_unemployment)`). Its date is from Jan 1947 to June 2015(same to pols_month)
+
 ## Problem 3
-```{r}
+Load and tidy the data. (notice that ethnicity and name in 2012 have same problems )
+```{r, message = FALSE}
 ## 2012是bug的一年，名字和缩写都不对
 pop_baby_name = read_csv("./data/Popular_Baby_Names.csv") %>% 
   janitor::clean_names() %>% 
@@ -116,11 +157,13 @@ pop_baby_name = read_csv("./data/Popular_Baby_Names.csv") %>%
          ethnicity = str_to_sentence(ethnicity))
 ```
 
+delete duplicated row based on year, gender, ethnicity and first name.
 ```{r}
 duplictaed_ones = pop_baby_name[duplicated(pop_baby_name[,1:4]),]
 distinct_pop_name = pop_baby_name[!duplicated(pop_baby_name[,1:4]),]
 ```
 
+Female Olivia rank in different ethnicity among years.
 ```{r}
 Olivia_female_rank = filter(distinct_pop_name, gender == "Female" & childs_first_name == "Olivia") %>% 
   select(-gender, -childs_first_name, -count) %>% 
@@ -130,6 +173,7 @@ Olivia_female_rank = filter(distinct_pop_name, gender == "Female" & childs_first
   )
 ```
 
+Most popular male name in different ethnicity among years.
 ```{r}
 most_popular_male_name = filter(distinct_pop_name, gender == "Male" & rank == 1) %>% 
   select(-gender, -rank, -count) %>% 
@@ -139,12 +183,19 @@ most_popular_male_name = filter(distinct_pop_name, gender == "Male" & rank == 1)
   )
 ```
 
+produce a scatter plot showing the number of children with a name against the rank in popularity of that name for male white non hispanic baby in 2016.
 ```{r}
 male_nonhisp_2016 = filter(distinct_pop_name, gender == "Male", 
                            ethnicity == "White non hispanic", 
                            year_of_birth == 2016)
 ##library(ggrepel)
-ggplot(male_nonhisp_2016, aes(x = rank, y = count)) + geom_point() 
+ggplot(male_nonhisp_2016, aes(x = rank, y = count)) + 
+  labs(
+    title = "2016 white non-hispanic male children's name and rank", 
+    x = "rank",
+    y = "number of children",
+  ) +
+  geom_point() 
 ##+ geom_text_repel(aes(x = rank, y = count, label = childs_first_name))
 ```
 
