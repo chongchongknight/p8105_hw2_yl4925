@@ -6,7 +6,7 @@ output: github_document
 ---
 
 ## Problem 1
-```{r, include = FALSE}
+```{r}
 library(tidyverse)
 ```
 
@@ -114,9 +114,9 @@ snp_raw = read_csv("./data/fivethirtyeight_datasets/snp.csv") %>%
   select(-"day")
 
 snp_after_2000 = filter(snp_raw, year <= 20) %>% 
-  mutate(year = as.character(as.numeric(year) + 2000))
-snp_before_2000 = filter(snp_raw, year >= 20) %>% 
-  mutate(year = as.character(as.numeric(year) + 1900))
+  mutate(year = paste("20", year, sep = ""))
+snp_before_2000 = filter(snp_raw, year > 20) %>% 
+  mutate(year = paste("19", year, sep = ""))
 snp = bind_rows(snp_before_2000, snp_after_2000) 
 
 snp
@@ -142,7 +142,7 @@ Join the datasets by merging snp into pols, and merging unemployment into the re
 pols_snp = left_join(pols_month, snp) 
 pols_snp_unemployment = left_join(pols_snp, unemployment)
 
-pols_snp_unemployment
+pols_snp_unemployment 
 ```
 
 pols_month is dataframe for number of national politicians, size is (`r dim(pols_month)`). It contains number of democratic governors, senators, representatives and presidents, number of republic governors, senators, representatives and presidents. And it contains date from Jan 1947 - June 2015.(variables contain year, month, gov_gop, sen_gop, rep_gop, gov_dem, sen_dem, rep_dem)
@@ -154,9 +154,56 @@ unemployment is dataframe for unemployment, size is (`r dim(unemployment)`). It 
 
 pols_snp_unemployment join these three datasets, so it includes all variables above. Its dimension is (`r dim(pols_snp_unemployment)`). Its date is from Jan 1947 to June 2015(same to pols_month). And 1947-1949 S&P closes are NA, 1947 unemployment are NA. It is not problem with code, but the raw snp and unemployment dataframe do not include data for these years.
 
+## test for lubridate
+```{r}
+## this is test chunk for lubridate package
+## I will use S&P dataframe
+library(lubridate, warn.conflicts = FALSE)
+library(patchwork)
+SNP = read_csv("./data/fivethirtyeight_datasets/snp.csv") %>% 
+  janitor::clean_names() 
+mode(pull(SNP, date))
+SNP_new = mutate(SNP, date = mdy(date))
+mode(pull(SNP_new, date))
+
+SNP_no_lubridate = ggplot(SNP, aes(x = date, y = close)) +
+  labs(title = "close VS date without using lubridate function") + geom_point()
+SNP_lubridate = ggplot(SNP_new, aes(x = date, y = close)) +
+  labs(title = "close VS date with using lubridate function") + geom_point()
+SNP_no_lubridate + SNP_lubridate
+```
+
+```{r}
+mdy("12/2/69")
+mdy("12/2/68")
+```
+We can use lubridate function to convert character time to numeric time, so modified date can be used for plot. But there are still some problems. I find that "mdy("12/2/69")" is converted to "1969-12-02", while "mdy("12/2/68")" is converted to "2068-12-02". So there will be a gap in plot. 
+
+Then I will convert year to 4-digit manually
+```{r}
+SNP_manual_deal = read_csv("./data/fivethirtyeight_datasets/snp.csv") %>% 
+  janitor::clean_names() %>% 
+  separate(date, into = c("month", "day", "year"), sep = "/")
+
+SNP_after_2000 = filter(SNP_manual_deal, year <= 20) %>% 
+  mutate(year = paste("20", year, sep = ""))
+SNP_before_2000 = filter(SNP_manual_deal, year > 20) %>% 
+  mutate(year = paste("19", year, sep = ""))
+new_SNP_manual_deal = bind_rows(SNP_before_2000, SNP_after_2000) 
+```
+
+```{r}
+final_SNP_manual_deal = mutate(new_SNP_manual_deal, date = paste(new_SNP_manual_deal$month, new_SNP_manual_deal$day, new_SNP_manual_deal$year, sep = "/")) %>% 
+  select(-day, -month, -year) %>% 
+  mutate(date = mdy(date))
+ggplot(final_SNP_manual_deal, aes(x = date, y = close)) +
+  labs(title = "close VS date(manual deal) with using lubridate function") + geom_point()
+```
+
+Now, this plot looks better 
 
 ## Problem 3
-Load and tidy the data. (notice that ethnicity and name in 2012 have same problems )
+Load and tidy the data. (notice that ethnicity and name in 2012 have some problems. Name in 2012 are uppercase letter, and ethnicity are incomplete)
 ```{r, message = FALSE}
 ## 2012是bug的一年，名字和缩写都不对
 pop_baby_name = read_csv("./data/Popular_Baby_Names.csv") %>% 
