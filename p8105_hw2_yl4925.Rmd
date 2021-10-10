@@ -28,7 +28,7 @@ trash_wheel_df
 
 
 Read and clean precipitation data for 2018 and 2019. For each, omit rows without precipitation data and add a variable for year. Next, combine precipitation dataset and convert month to a character variable
-```{r, message = FALSE}
+```{r}
 pre2019 = readxl::read_excel(
   "./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx",
   sheet = "2019 Precipitation",
@@ -54,7 +54,7 @@ pre2018row = nrow(pre2018)
 pre2018col = ncol(pre2018)
 ```
 
-```{r, message = FALSE}
+```{r}
 ##month.name is a vector, not function
 combo = bind_rows(pre2018, pre2019) %>% 
   mutate(month = month.name[month])
@@ -138,7 +138,7 @@ unemployment
 ```
 
 Join the datasets by merging snp into pols, and merging unemployment into the result.
-```{r, message = FALSE}
+```{r}
 pols_snp = left_join(pols_month, snp) 
 pols_snp_unemployment = left_join(pols_snp, unemployment)
 
