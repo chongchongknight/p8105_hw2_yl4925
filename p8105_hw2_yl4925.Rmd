@@ -152,7 +152,8 @@ snp is dataframe for Standard & Poor’s stock market index, size is (`r dim(snp
 
 unemployment is dataframe for unemployment, size is (`r dim(unemployment)`). It contains the percentage of unemployment and date from Jan 1948 to June 2015.(variables contain year, month, unemployment)
 
-pols_snp_unemployment join these three datasets, so it includes all variables above. Its dimension is (`r dim(pols_snp_unemployment)`). Its date is from Jan 1947 to June 2015(same to pols_month)
+pols_snp_unemployment join these three datasets, so it includes all variables above. Its dimension is (`r dim(pols_snp_unemployment)`). Its date is from Jan 1947 to June 2015(same to pols_month). And 1947-1949 S&P closes are NA, 1947 unemployment are NA. It is not problem with code, but the raw snp and unemployment dataframe do not include data for these years.
+
 
 ## Problem 3
 Load and tidy the data. (notice that ethnicity and name in 2012 have same problems )
